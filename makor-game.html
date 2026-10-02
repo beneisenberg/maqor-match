@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>מָקוֹר — Infinitive Match</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Hebrew:wght@400;600;700&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E4E9EF; --surface:#F6F8FB; --ink:#16202D; --muted:#566275;
+  --lapis:#24447A; --lapis-soft:#D3DDEC; --saffron:#E2A51C; --card-ink:#1C1404;
+  --olive:#3C7A37; --madder:#B1352F; --line:#C1CAD6;
+  --he:"SBL Hebrew","Noto Serif Hebrew","Ezra SIL","Times New Roman",serif;
+  --ui:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1622; --surface:#172238; --ink:#E8ECF2; --muted:#98A4B7;
+    --lapis:#93B2E9; --lapis-soft:#22355B; --saffron:#F0B73A;
+    --olive:#80C374; --madder:#F27B72; --line:#2C3B58;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1622; --surface:#172238; --ink:#E8ECF2; --muted:#98A4B7;
+  --lapis:#93B2E9; --lapis-soft:#22355B; --saffron:#F0B73A;
+  --olive:#80C374; --madder:#F27B72; --line:#2C3B58;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);
+  -webkit-tap-highlight-color:transparent;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--saffron);outline-offset:2px}
+.he{font-family:var(--he);direction:rtl}
+.screen{height:100%;display:none;flex-direction:column;max-width:960px;margin:0 auto;padding:16px}
+.screen.on{display:flex}
+
+/* start */
+#start{justify-content:center;align-items:center;text-align:center;gap:22px;overflow-y:auto}
+.title{font-family:var(--he);font-size:clamp(4.5rem,18vw,8.5rem);line-height:1;margin:0;color:var(--lapis);font-weight:700}
+.title span{display:block;font-family:var(--ui);font-size:1rem;font-weight:600;color:var(--muted);margin-top:14px;direction:ltr}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:620px}
+.chip{border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:10px 18px;
+  font-family:var(--he);font-size:1.25rem;min-width:84px;transition:background .15s,border-color .15s}
+.chip.latin{font-family:var(--ui);font-size:1rem;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--lapis);border-color:var(--lapis);color:var(--surface)}
+.chip.level{font-family:var(--ui);min-width:160px;border-radius:16px;padding:12px 18px}
+.chip .lv{display:block;font-weight:700;font-size:1.1rem;direction:ltr}
+.chip .ex{display:block;font-size:1.25rem;margin:4px 0 2px;white-space:pre}
+.chip small{display:block;font-family:var(--ui);font-size:.72rem;opacity:.75;direction:ltr}
+.go{background:var(--saffron);color:var(--card-ink);border:0;border-radius:14px;padding:14px 40px;
+  font-weight:700;font-size:1.15rem;direction:ltr}
+.go:disabled{opacity:.4;cursor:default}
+.note{color:var(--muted);font-size:.9rem;direction:ltr;margin:0}
+
+/* hud */
+.hud{display:flex;align-items:center;gap:10px;direction:ltr;flex-wrap:wrap}
+.stat{font-weight:700;font-variant-numeric:tabular-nums;font-size:1.05rem;padding:6px 10px;border-radius:10px;background:var(--surface)}
+.stat.score{font-size:1.3rem;color:var(--lapis)}
+.spacer{flex:1}
+.ibtn{border:2px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 12px;font-weight:600}
+.ibtn:disabled{opacity:.35;cursor:default}
+.track{height:4px;background:var(--line);border-radius:2px;margin-top:10px;overflow:hidden}
+.track i{display:block;height:100%;background:var(--lapis);width:0;transition:width .3s}
+
+/* stage */
+#spawn{position:relative;flex:1;min-height:150px}
+.card{position:absolute;background:var(--saffron);color:var(--card-ink);border-radius:18px;
+  padding:14px 30px 18px;font-family:var(--he);font-size:clamp(2.2rem,7vw,3.2rem);line-height:1.3;
+  touch-action:none;user-select:none;cursor:grab;box-shadow:0 10px 0 -4px rgba(0,0,0,.18);will-change:opacity,filter}
+.card.pop{animation:pop .32s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.3)}to{transform:scale(1)}}
+.card.dragging{cursor:grabbing;pointer-events:none;z-index:50;animation:none;transform:scale(1.06) rotate(-2deg)}
+.card .clock{position:absolute;left:14px;right:14px;bottom:8px;height:4px;border-radius:2px;background:rgba(0,0,0,.15);overflow:hidden}
+.card .clock i{display:block;height:100%;background:var(--card-ink);width:100%;margin-inline-start:auto}
+.card.gone{transition:transform .35s,opacity .35s;transform:scale(.4)!important;opacity:0!important}
+.float{position:fixed;z-index:60;font-weight:700;font-size:1.4rem;color:var(--olive);pointer-events:none;direction:ltr;
+  animation:rise .9s ease-out forwards}
+@keyframes rise{to{transform:translateY(-50px);opacity:0}}
+
+/* targets */
+#tiles{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:clamp(72px,11vh,96px);gap:10px;padding-top:8px;width:100%;max-width:640px;margin:0 auto}
+.tile{position:relative;border:2px solid var(--line);background:var(--surface);border-radius:14px;
+  padding:6px 8px;font-family:var(--he);font-size:clamp(1.5rem,5vw,2rem);height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;
+  transition:border-color .12s,background .12s,opacity .25s,transform .12s}
+.tile .k{position:absolute;top:5px;left:8px;font-family:var(--ui);font-size:.7rem;color:var(--muted)}
+.tile.over{border-color:var(--lapis);background:var(--lapis-soft);transform:scale(1.04)}
+.tile.ok{border-color:var(--olive);background:color-mix(in srgb,var(--olive) 22%,var(--surface))}
+.tile.bad{border-color:var(--madder);animation:shake .35s}
+.tile.reveal{border-color:var(--olive);border-style:dashed;animation:pulse .6s 2}
+.tile.out{opacity:.18;pointer-events:none}
+.tile .ans{display:block;font-size:.6em;color:var(--olive)}
+@keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
+@keyframes pulse{50%{transform:scale(1.07)}}
+
+/* end */
+#end{align-items:center;text-align:center;gap:14px;overflow-y:auto;padding-top:32px}
+.big{font-size:clamp(3rem,12vw,5rem);font-weight:700;color:var(--lapis);margin:0;direction:ltr;font-variant-numeric:tabular-nums}
+.line{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;direction:ltr;color:var(--muted);font-weight:600}
+.line b{color:var(--ink)}
+.review{width:100%;max-width:440px;border-collapse:collapse;margin-top:6px}
+.review caption{direction:ltr;font-weight:700;padding-bottom:8px;color:var(--madder)}
+.review td{font-family:var(--he);font-size:1.5rem;padding:6px 10px;border-bottom:1px solid var(--line)}
+.review td.arrow{font-family:var(--ui);color:var(--muted);font-size:1rem;width:30px}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+
+@media (prefers-reduced-motion:reduce){
+  .card.pop,.tile.bad,.tile.reveal,.float{animation:none}
+}
+</style>
+</head>
+<body>
+
+<section id="start" class="screen on" aria-label="Start">
+  <h1 class="title">מָקוֹר<span>Match each infinitive to its verb before it fades — 10 seconds each.</span></h1>
+  <div class="chips" id="chips"></div>
+  <button class="go" id="goBtn">▶ Start · <span class="he">הַתְחֵל</span></button>
+  <p class="note" id="bestNote"></p>
+</section>
+
+<section id="play" class="screen" aria-label="Game">
+  <div class="hud">
+    <span class="stat score" id="score">0</span>
+    <span class="stat" id="streak" title="Streak">🔥 0</span>
+    <span class="spacer"></span>
+    <span class="stat" id="prog">0/0</span>
+    <button class="ibtn" id="hintBtn" title="Hint: removes half the wrong verbs">💡 3</button>
+    <button class="ibtn" id="soundBtn" title="Sound" aria-pressed="true">🔊</button>
+    <button class="ibtn" id="quitBtn" title="End game">✕</button>
+  </div>
+  <div class="track"><i id="track"></i></div>
+  <div id="spawn"></div>
+  <div id="tiles" role="group" aria-label="Verbs"></div>
+</section>
+
+<section id="end" class="screen" aria-label="Results">
+  <p class="big" id="finalScore">0</p>
+  <div class="line">
+    <span>✓ first try <b id="fFirst">0</b></span>
+    <span>🔥 best streak <b id="fStreak">0</b></span>
+    <span id="fBest"></span>
+  </div>
+  <table class="review" id="review"></table>
+  <div class="row">
+    <button class="go" id="againBtn">↻ Play again</button>
+    <button class="ibtn" id="menuBtn">☰ Levels</button>
+  </div>
+</section>
+
+<script>
+const GROUPS=[
+ {id:"core",label:"Core",latin:true,items:[["אָמַר","לֵאמֹר"],["אָכַל","לֶאֱכֹל"],["לָקַח","לָקַ֫חַת"],["נָתַן","לָתֵת"],["רָדַף","לִרְדֹּף"],["מָלַךְ","לִמְלֹךְ"],["כָּרַת","לִכְרֹת"],["שָׁכַב","לִשְׁכַּב"],["מָצָא","לִמְצֹא"]]},
+ {id:"2yw",label:"2-י/ו",items:[["רָץ","לָרוּץ"],["מֵת","לָמוּת"],["נָס","לָנוּס"],["שָׁב","לָשׁוּב"],["שָׂם","לָשׂוּם"],["בָּא","לָבוֹא"]]},
+ {id:"h3",label:"ה-3",items:[["הָיָה","לִהְיוֹת"],["רָאָה","לִרְאוֹת"],["עָשָׂה","לַעֲשׂוֹת"],["עָלָה","לַעֲלוֹת"],["שָׁתָה","לִשְׁתּוֹת"],["בָּנָה","לִבְנוֹת"],["הִכָּה","לְהַכּוֹת"],["הֶעֱלָה","לְהַעֲלוֹת"]]},
+ {id:"1ha",label:"1-ה/ע",items:[["עָלָה","לַעֲלוֹת"],["עָשָׂה","לַעֲשׂוֹת"],["עָבַר","לַעֲבֹר"],["עָמַד","לַעֲמֹד"],["הָרַג","לַהֲרֹג"]]},
+ {id:"1y",label:"1-י",items:[["יָרַד","לָרֶדֶת"],["יָשַׁב","לָשֶׁבֶת"],["יָלַד","לָלֶדֶת"],["הָלַךְ","לָלֶכֶת"],["יָצָא","לָצֵאת"],["נָשָׂא","לָשֵׂאת"]]},
+ {id:"hif",label:"הִפְעִיל",items:[["הִמְלִיךְ","לְהַמְלִיךְ"],["הִגִּיד","לְהַגִּיד"],["הֵשִׁיב","לְהָשִׁיב"],["הֵמִית","לְהָמִית"],["הֵבִיא","לְהָבִיא"]]},
+ {id:"pi",label:"פִּעֵל",items:[["דִּבֶּר","לְדַבֵּר"],["בִּקֵּשׁ","לְבַקֵּשׁ"],["מִלֵּא","לְמַלֵּא"],["בֵּרַךְ","לְבָרֵךְ"],["צִוָּה","לְצַוֹּת"]]}
+];
+const TIME=10, MAX_TILES=9, HINTS=3;
+const $=id=>document.getElementById(id);
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+/* ---------- sound ---------- */
+let ac=null, soundOn=store.get("makor-sound")!=="off";
+function tone(f,d,type="sine",v=.18,delay=0,f2){
+  if(!soundOn)return;
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();}catch(e){return}
+  const t=ac.currentTime+delay,o=ac.createOscillator(),g=ac.createGain();
+  o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.001,t+d);
+  o.connect(g).connect(ac.destination);o.start(t);o.stop(t+d+.02);
+}
+const sfx={
+  pop:()=>tone(440,.12,"sine",.12,0,700),
+  ok:(s)=>{const b=520+Math.min(s,8)*30;tone(b,.14,"triangle",.2);tone(b*1.5,.22,"triangle",.2,.09)},
+  bad:()=>tone(170,.25,"sawtooth",.1,0,110),
+  tick:()=>tone(1250,.05,"square",.05),
+  out:()=>tone(420,.45,"sine",.16,0,160),
+  end:()=>[523,659,784,1046].forEach((f,i)=>tone(f,.3,"triangle",.16,i*.12)),
+  hint:()=>tone(880,.18,"sine",.12,0,1320)
+};
+
+/* ---------- start screen ---------- */
+/* 1 = predictable pattern, 2 = hollow / final-ה / long-vowel הִפְעִיל, 3 = segholate & irregular */
+const LEVEL={
+ "רָדַף":1,"מָלַךְ":1,"כָּרַת":1,"שָׁכַב":1,"מָצָא":1,"עָבַר":1,"עָמַד":1,"הָרַג":1,
+ "דִּבֶּר":1,"בִּקֵּשׁ":1,"מִלֵּא":1,"בֵּרַךְ":1,"הִמְלִיךְ":1,"הִגִּיד":1,
+ "רָץ":2,"מֵת":2,"נָס":2,"שָׁב":2,"שָׂם":2,"בָּא":2,
+ "הָיָה":2,"רָאָה":2,"עָשָׂה":2,"עָלָה":2,"שָׁתָה":2,"בָּנָה":2,"הִכָּה":2,"הֶעֱלָה":2,"צִוָּה":2,
+ "הֵשִׁיב":2,"הֵמִית":2,"הֵבִיא":2,
+ "יָרַד":3,"יָשַׁב":3,"יָלַד":3,"הָלַךְ":3,"יָצָא":3,"נָשָׂא":3,
+ "אָמַר":3,"אָכַל":3,"לָקַח":3,"נָתַן":3
+};
+const LEVELS=[
+ {n:1,label:"Easy",ex:"לִמְלֹךְ  לְדַבֵּר"},
+ {n:2,label:"Medium",ex:"+ לָשׁוּב  לִבְנוֹת"},
+ {n:3,label:"Hard",ex:"+ לָשֶׁבֶת  לָתֵת"}
+];
+let level=+store.get("makor-level")||1;
+function renderChips(){
+  const c=$("chips");c.innerHTML="";
+  LEVELS.forEach(L=>{
+    const b=document.createElement("button");
+    b.className="chip level";b.setAttribute("aria-pressed",level===L.n);
+    b.innerHTML=`<span class="lv">${L.label}</span><span class="he ex">${L.ex}</span><small>${buildPool(L.n).length} verbs</small>`;
+    b.onclick=()=>{level=L.n;renderChips()};
+    c.appendChild(b);
+  });
+  $("goBtn").disabled=false;
+  const best=store.get("makor-best-"+key());
+  $("bestNote").textContent=best?`Best on this level: ${best}`:"";
+}
+const key=()=>"L"+level;
+
+/* ---------- game state ---------- */
+let pool,queue,idx,score,streak,bestStreak,hints,firstTry,missed,cur,raf,lastTick;
+function buildPool(n=level){
+  const seen=new Map();
+  GROUPS.forEach(g=>g.items.forEach(([q,m])=>{
+    if((LEVEL[q]||3)>n)return;
+    if(!seen.has(q))seen.set(q,{q,m,groups:[g.id]});else seen.get(q).groups.push(g.id);
+  }));
+  return [...seen.values()];
+}
+function startGame(){
+  store.set("makor-level",level);
+  pool=buildPool();queue=shuffle(pool);idx=0;score=0;streak=0;bestStreak=0;hints=HINTS;firstTry=0;missed=[];
+  show("play");updateHud();setTimeout(nextRound,350);
+}
+function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on",s.id===id))}
+function updateHud(){
+  $("score").textContent=score;$("streak").textContent="🔥 "+streak;
+  $("prog").textContent=`${Math.min(idx,queue.length)}/${queue.length}`;
+  $("track").style.width=(idx/queue.length*100)+"%";
+  $("hintBtn").textContent="💡 "+hints;
+  $("hintBtn").disabled=!hints||!cur||cur.done||cur.hinted;
+  $("soundBtn").textContent=soundOn?"🔊":"🔇";
+}
+function pickTargets(item){
+  const others=pool.filter(p=>p.q!==item.q);
+  if(pool.length<=MAX_TILES+1)return shuffle(pool);
+  const same=shuffle(others.filter(p=>p.groups.some(g=>item.groups.includes(g)))).slice(0,4);
+  const rest=shuffle(others.filter(p=>!same.includes(p))).slice(0,MAX_TILES-1-same.length);
+  return shuffle([item,...same,...rest]);
+}
+function nextRound(){
+  if(idx>=queue.length)return endGame();
+  const item=queue[idx++];
+  cur={item,targets:pickTargets(item),wrong:0,done:false,hinted:false,start:0};
+  renderTiles();updateHud();
+  setTimeout(spawnCard,250);
+}
+function renderTiles(){
+  const t=$("tiles");t.innerHTML="";
+  cur.targets.forEach((p,i)=>{
+    const b=document.createElement("button");
+    b.className="tile";b.dataset.q=p.q;
+    b.innerHTML=`<span class="k">${i+1}</span>${p.q}`;
+    b.onclick=()=>{if(cur&&!cur.done&&card)answer(b)};
+    t.appendChild(b);
+  });
+}
+
+/* ---------- the card ---------- */
+let card=null,home={x:0,y:0},drag=null;
+function spawnCard(){
+  if(!cur||cur.done)return;
+  const sp=$("spawn");
+  card=document.createElement("div");
+  card.className="card pop";card.setAttribute("aria-live","polite");
+  card.innerHTML=`${cur.item.m}<span class="clock"><i></i></span>`;
+  card.style.visibility="hidden";sp.appendChild(card);
+  const W=sp.clientWidth,H=sp.clientHeight,cw=card.offsetWidth,ch=card.offsetHeight;
+  home.x=Math.max(0,(W-cw)/2);home.y=Math.max(0,(H-ch)/2);
+  placeHome();card.style.visibility="";
+  card.addEventListener("pointerdown",onDown);
+  sfx.pop();cur.start=performance.now();lastTick=TIME;
+  cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);updateHud();
+}
+function placeHome(){
+  card.style.position="absolute";card.style.left=home.x+"px";card.style.top=home.y+"px";card.style.width="";
+  if(card.parentNode!==$("spawn"))$("spawn").appendChild(card);
+}
+function loop(now){
+  if(!cur||cur.done||!card)return;
+  const el=(now-cur.start)/1000,left=Math.max(0,TIME-el),f=el/TIME;
+  card.style.opacity=Math.max(0,1-Math.pow(f,1.6));
+  if(!reduce)card.style.filter=`blur(${Math.max(0,(f-.55))*6}px)`;
+  card.querySelector(".clock i").style.width=(left/TIME*100)+"%";
+  const s=Math.ceil(left);if(s<lastTick){lastTick=s;if(s<=3&&s>0)sfx.tick()}
+  if(el>=TIME)return timeout();
+  raf=requestAnimationFrame(loop);
+}
+function onDown(e){
+  if(!cur||cur.done)return;
+  e.preventDefault();
+  const r=card.getBoundingClientRect();
+  drag={dx:e.clientX-r.left,dy:e.clientY-r.top};
+  card.classList.remove("pop");card.classList.add("dragging");
+  card.style.position="fixed";card.style.width=r.width+"px";
+  card.style.left=r.left+"px";card.style.top=r.top+"px";
+  document.body.appendChild(card);
+  addEventListener("pointermove",onMove);addEventListener("pointerup",onUp);addEventListener("pointercancel",onUp);
+}
+function tileAt(x,y){const el=document.elementFromPoint(x,y);return el&&el.closest(".tile:not(.out)")}
+function onMove(e){
+  if(!drag||!card)return;
+  card.style.left=(e.clientX-drag.dx)+"px";card.style.top=(e.clientY-drag.dy)+"px";
+  const t=tileAt(e.clientX,e.clientY);
+  document.querySelectorAll(".tile.over").forEach(x=>x!==t&&x.classList.remove("over"));
+  if(t)t.classList.add("over");
+}
+function onUp(e){
+  removeEventListener("pointermove",onMove);removeEventListener("pointerup",onUp);removeEventListener("pointercancel",onUp);
+  if(!drag)return;drag=null;
+  document.querySelectorAll(".tile.over").forEach(x=>x.classList.remove("over"));
+  if(!card||!cur||cur.done)return;
+  const t=tileAt(e.clientX,e.clientY);
+  card.classList.remove("dragging");
+  if(t)answer(t);else placeHome();
+}
+function endDrag(){
+  drag=null;
+  removeEventListener("pointermove",onMove);removeEventListener("pointerup",onUp);removeEventListener("pointercancel",onUp);
+}
+
+/* ---------- answers ---------- */
+function answer(tile){
+  if(tile.dataset.q===cur.item.q){
+    cur.done=true;cancelAnimationFrame(raf);endDrag();
+    const left=Math.max(0,TIME-(performance.now()-cur.start)/1000);
+    streak++;bestStreak=Math.max(bestStreak,streak);
+    let pts=100+Math.round(left*10);if(cur.wrong)pts=Math.round(pts/2);
+    pts=Math.round(pts*(1+Math.min(streak-1,4)*.25));score+=pts;
+    if(!cur.wrong)firstTry++;
+    tile.classList.add("ok");sfx.ok(streak);
+    const r=tile.getBoundingClientRect();floatText("+"+pts,r.left+r.width/2-20,r.top);
+    flyInto(tile);updateHud();setTimeout(nextRound,750);
+  }else{
+    cur.wrong++;streak=0;
+    if(cur.wrong===1)missed.push(cur.item);
+    tile.classList.remove("bad");void tile.offsetWidth;tile.classList.add("bad");
+    sfx.bad();placeHome();updateHud();
+  }
+}
+function flyInto(tile){
+  if(!card)return;
+  const r=tile.getBoundingClientRect(),c=card.getBoundingClientRect();
+  card.style.position="fixed";card.style.left=c.left+"px";card.style.top=c.top+"px";document.body.appendChild(card);
+  card.style.transition="left .3s,top .3s,transform .3s,opacity .3s";
+  requestAnimationFrame(()=>{card.style.left=(r.left+r.width/2-c.width/2)+"px";card.style.top=(r.top+r.height/2-c.height/2)+"px";card.classList.add("gone")});
+  const old=card;card=null;setTimeout(()=>old.remove(),380);
+}
+function timeout(){
+  cur.done=true;endDrag();streak=0;
+  if(!cur.wrong)missed.push(cur.item);
+  sfx.out();
+  if(card){card.classList.add("gone");const old=card;card=null;setTimeout(()=>old.remove(),380)}
+  const t=[...document.querySelectorAll(".tile")].find(x=>x.dataset.q===cur.item.q);
+  if(t){t.classList.remove("out");t.classList.add("reveal");t.insertAdjacentHTML("beforeend",`<span class="ans">${cur.item.m}</span>`)}
+  updateHud();setTimeout(nextRound,1700);
+}
+function floatText(txt,x,y){
+  const f=document.createElement("div");f.className="float";f.textContent=txt;
+  f.style.left=x+"px";f.style.top=y+"px";document.body.appendChild(f);setTimeout(()=>f.remove(),950);
+}
+function useHint(){
+  if(!hints||!cur||cur.done||cur.hinted)return;
+  const wrong=shuffle([...document.querySelectorAll(".tile")].filter(t=>t.dataset.q!==cur.item.q));
+  wrong.slice(0,Math.ceil(wrong.length/2)).forEach(t=>t.classList.add("out"));
+  hints--;cur.hinted=true;sfx.hint();updateHud();
+}
+
+/* ---------- end ---------- */
+function endGame(){
+  cancelAnimationFrame(raf);endDrag();
+  if(card){card.remove();card=null}cur=null;
+  const k="makor-best-"+key(),prev=+store.get(k)||0,isBest=score>prev&&idx>=queue.length;
+  if(isBest)store.set(k,score);
+  $("finalScore").textContent=score;
+  $("fFirst").textContent=`${firstTry} / ${queue.length}`;
+  $("fStreak").textContent=bestStreak;
+  $("fBest").innerHTML=isBest?"🏆 <b>new best</b>":(prev?`best <b>${prev}</b>`:"");
+  const rv=$("review");
+  rv.innerHTML=missed.length?`<caption>Review</caption>`+missed.map(p=>`<tr><td>${p.q}</td><td class="arrow">→</td><td>${p.m}</td></tr>`).join(""):"";
+  show("end");sfx.end();
+}
+
+/* ---------- wiring ---------- */
+$("goBtn").onclick=startGame;
+$("againBtn").onclick=startGame;
+$("menuBtn").onclick=()=>{renderChips();show("start")};
+$("quitBtn").onclick=()=>{queue=queue.slice(0,Math.max(idx-(cur&&!cur.done?1:0),0));if(!queue.length){cancelAnimationFrame(raf);if(card){card.remove();card=null}cur=null;renderChips();show("start");return}idx=queue.length;endGame()};
+$("hintBtn").onclick=useHint;
+$("soundBtn").onclick=()=>{soundOn=!soundOn;store.set("makor-sound",soundOn?"on":"off");updateHud()};
+addEventListener("keydown",e=>{
+  if(!$("play").classList.contains("on")||!cur||cur.done||!card)return;
+  const n=+e.key;
+  if(n>=1&&n<=9){const t=document.querySelectorAll(".tile")[n-1];if(t&&!t.classList.contains("out"))answer(t)}
+  if(e.key==="h"||e.key==="H")useHint();
+});
+renderChips();
+</script>
+</body>
+</html>
